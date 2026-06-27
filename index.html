@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=no">
+  <title>🎂 电医2401班一周年</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      font-family: 'Quicksand', 'Segoe UI', 'PingFang SC', system-ui, sans-serif;
+      background: #f5ebe0;
+    }
+    #info {
+      position: absolute;
+      top: 18px;
+      left: 0; right: 0;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      color: #5c4b3d;
+      text-shadow: 0 4px 20px rgba(255,230,210,0.5);
+      font-weight: 600;
+      letter-spacing: 2px;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 0 16px;
+    }
+    #info h1 {
+      margin: 0;
+      font-size: 2.4rem;
+      background: rgba(255,250,245,0.7);
+      backdrop-filter: blur(8px);
+      padding: 6px 32px;
+      border-radius: 60px;
+      border: 1px solid rgba(230,210,190,0.6);
+      box-shadow: 0 8px 24px rgba(80,50,30,0.08);
+      display: inline-block;
+      pointer-events: auto;
+    }
+    #status {
+      position: absolute;
+      bottom: 30px;
+      left: 0; right: 0;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      color: #7a6655;
+      font-weight: 500;
+      font-size: 1.1rem;
+      background: rgba(240,225,210,0.5);
+      backdrop-filter: blur(4px);
+      padding: 12px 28px;
+      border-radius: 60px;
+      border: 1px solid #e8d5c0;
+      width: fit-content;
+      margin: 0 auto;
+      box-shadow: 0 6px 0 #d4c0a8;
+    }
+    @media (max-width: 600px) {
+      #info h1 { font-size: 1.5rem; padding: 4px 16px; }
+      #status { font-size: 0.8rem; padding: 6px 16px; }
+    }
+    #loading {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #f5ebe0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      font-size: 2.2rem;
+      color: #7a6655;
+      font-weight: 600;
+      transition: opacity 0.8s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .reset-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: rgba(255,250,245,0.8);
+      backdrop-filter: blur(8px);
+      border: 2px solid #d4c0a8;
+      color: #5c4b3d;
+      padding: 10px 24px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 0 #b8a08a;
+    }
+    .reset-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #b8a08a; }
+    .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b8a08a; }
+    .toast-container {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 200;
+      pointer-events: none;
+    }
+    .toast {
+      background: rgba(255,250,245,0.9);
+      backdrop-filter: blur(8px);
+      color: #5c4b3d;
+      padding: 14px 32px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: 2px solid #e8d5c0;
+      box-shadow: 0 8px 32px rgba(80,50,30,0.1);
+      opacity: 0;
+      transform: scale(0.5) translateY(20px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  </style>
+<base target="_blank">
+</head>
+<body>
+  <div id="loading">🍰 蛋糕正在烘焙...</div>
+  <div id="info"><h1>🎂 电医2401班一周年</h1></div>
+  <div id="status">点击姓名标签享用蛋糕</div>
+  <button class="reset-btn" onclick="resetAll()">🔄 重置蛋糕</button>
+  <div class="toast-container"><div class="toast" id="toast"></div></div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // ========== 姓名列表 ==========
+    const names = [
+      "王思晗","朱佳琪","吴浩宇","马鸣悦","廖静宇","张姬瑶","朱奕恒",
+      "唐亦朝","万笑冉","曹永和","孙研","曲开研","曹东琳","李思恩",
+      "祝世琦","李垚","彭文萱","赵懋臣","刘国铭","董书德","王浩宇",
+      "戚继旺","孙嫣然","杨常涛","李昕媛","唐思雨","张思淼","赵方舟",
+      "宗柏辰","李福容","刘鲁生","毛帅","平新丽","周淏泳"
+    ];
+    const total = names.length;
+    const sliceAngle = (Math.PI * 2) / total;
+
+    // ========== 场景 ==========
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5ebe0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.LinearEncoding;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.gammaFactor = 1.0;
+    document.body.appendChild(renderer.domElement);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 35, 5);
+    camera.lookAt(0, 0, 0);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+    controls.enableZoom = true;
+    controls.target.set(0, 0, 0);
+    controls.maxPolarAngle = Math.PI / 2.2;
+    controls.minDistance = 10;
+    controls.maxDistance = 60;
+
+    // ========== 灯光 ==========
+    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+    scene.add(new THREE.DirectionalLight(0xffffff, 0.3).position.set(0, 20, 0));
+
+    // ========== 托盘 ==========
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(6.0, 6.3, 0.15, 64),
+      new THREE.MeshBasicMaterial({ color: 0xf5f0e8 })
+    );
+    plate.position.y = -0.08;
+    scene.add(plate);
+
+    // ========== 蛋糕组 ==========
+    const cakeGroup = new THREE.Group();
+    scene.add(cakeGroup);
+
+    const sliceData = [];
+    const S = 2.0;
+
+    // ========== 有食欲的配色 (奶油/巧克力/草莓/抹茶/蓝莓) ==========
+    const palette = [
+      0xf4a460, 0xd2691e, 0xcd853f, 0xdeb887, 0xf5deb3,
+      0xffb6c1, 0xff69b4, 0xff1493, 0xdb7093, 0xf08080,
+      0x90ee90, 0x3cb371, 0x2e8b57, 0x98fb98, 0x8fbc8f,
+      0x87ceeb, 0x4169e1, 0x6495ed, 0xb0c4de, 0xadd8e6,
+      0xffd700, 0xffa500, 0xff8c00, 0xf4a460, 0xdaa520,
+      0xdc143c, 0xb22222, 0xcd5c5c, 0xf08080, 0xfa8072,
+      0xdda0dd, 0xda70d6, 0xba55d3, 0x9370db
+    ];
+
+    function getColor(i) {
+      return new THREE.Color(palette[i % palette.length]);
+    }
+
+    function createSectorShape(startAngle, endAngle, outerRadius, segments = 32) {
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0);
+      for (let j = 0; j <= segments; j++) {
+        const t = j / segments;
+        const angle = startAngle + t * (endAngle - startAngle);
+        shape.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius);
+      }
+      shape.lineTo(0, 0);
+      return shape;
+    }
+
+    // ========== 创建姓名纹理 ==========
+    function createNameTexture(name, bgColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 80;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = bgColor;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, 256, 80, 20);
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(3, 3, 250, 74, 16);
+      ctx.stroke();
+
+      ctx.fillStyle = '#5c4b3d';
+      ctx.font = 'bold 36px "Quicksand", "PingFang SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name, 128, 40);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // ========== 创建蛋糕切片 ==========
+    for (let i = 0; i < total; i++) {
+      const startAngle = i * sliceAngle;
+      const endAngle = startAngle + sliceAngle;
+      const midAngle = startAngle + sliceAngle / 2;
+      const color = getColor(i);
+      const lightColor = color.clone().lerp(new THREE.Color(0xffffff), 0.35);
+      const darkColor = color.clone().lerp(new THREE.Color(0x8b4513), 0.15);
+
+      const group = new THREE.Group();
+      group.userData.index = i;
+      group.userData.eaten = false;
+
+      // ---- 蛋糕主体 ----
+      const shape = createSectorShape(startAngle, endAngle, 3.2 * S, 32);
+      const body = new THREE.Mesh(
+        new THREE.ExtrudeGeometry(shape, {
+          depth: 2.0 * S,
+          bevelEnabled: true,
+          bevelThickness: 0.05 * S,
+          bevelSize: 0.05 * S,
+          bevelSegments: 2,
+        }),
+        new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
+      );
+      body.rotation.x = -Math.PI / 2;
+      body.position.y = 0.5 * S;
+      group.add(body);
+
+      // ---- 顶部奶油层 ----
+      const top = new THREE.Mesh(
+        new THREE.ExtrudeGeometry(
+          createSectorShape(startAngle, endAngle, 3.15 * S, 28),
+          { depth: 0.12 * S, bevelEnabled: true, bevelThickness: 0.02 * S, bevelSize: 0.02 * S, bevelSegments: 1 }
+        ),
+        new THREE.MeshBasicMaterial({ color: lightColor, side: THREE.DoubleSide })
+      );
+      top.rotation.x = -Math.PI / 2;
+      top.position.y = 2.5 * S;
+      group.add(top);
+
+      // ---- 侧边巧克力淋面 ----
+      const dripCount = 5;
+      for (let j = 0; j < dripCount; j++) {
+        const t = (j + 0.5) / dripCount;
+        const angle = startAngle + t * sliceAngle;
+        const r = 3.1 * S;
+        const x = Math.cos(angle) * r;
+        const z = Math.sin(angle) * r;
+        const dripHeight = 0.3 * S + Math.random() * 0.4 * S;
+        const drip = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.08 * S, dripHeight, 4, 8),
+          new THREE.MeshBasicMaterial({ color: darkColor })
+        );
+        drip.position.set(x, 2.5 * S - dripHeight / 2, z);
+        group.add(drip);
+      }
+
+      // ---- 奶油花边 (外边缘) ----
+      const creamCount = 8;
+      for (let j = 0; j < creamCount; j++) {
+        const t = (j + 0.5) / creamCount;
+        const angle = startAngle + t * sliceAngle;
+        const r = 3.05 * S;
+        const x = Math.cos(angle) * r;
+        const z = Math.sin(angle) * r;
+
+        // 奶油底座
+        const creamBase = new THREE.Mesh(
+          new THREE.SphereGeometry(0.18 * S, 12, 12),
+          new THREE.MeshBasicMaterial({ color: 0xfff8f0 })
+        );
+        creamBase.position.set(x, 2.72 * S, z);
+        group.add(creamBase);
+
+        // 奶油尖顶
+        const creamTip = new THREE.Mesh(
+          new THREE.ConeGeometry(0.1 * S, 0.25 * S, 8),
+          new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
+        creamTip.position.set(x, 2.95 * S, z);
+        group.add(creamTip);
+
+        // 小樱桃/装饰球
+        const cherry = new THREE.Mesh(
+          new THREE.SphereGeometry(0.06 * S, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xdc143c })
+        );
+        cherry.position.set(x, 3.1 * S, z);
+        group.add(cherry);
+      }
+
+      // ---- 顶部装饰：水果片 ----
+      for (let j = 0; j < 3; j++) {
+        const t = (j + 0.3) / 3;
+        const angle = startAngle + t * sliceAngle;
+        const r = (1.0 + Math.random() * 1.5) * S;
+        const fruitColors = [0xff6347, 0xffa500, 0x32cd32, 0xff69b4, 0x9370db];
+        const fruit = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15 * S, 0.15 * S, 0.05 * S, 8),
+          new THREE.MeshBasicMaterial({ color: fruitColors[Math.floor(Math.random() * fruitColors.length)] })
+        );
+        fruit.position.set(Math.cos(angle) * r, 2.68 * S, Math.sin(angle) * r);
+        fruit.rotation.x = Math.PI / 2;
+        fruit.rotation.z = Math.random() * Math.PI;
+        group.add(fruit);
+      }
+
+      // ---- 顶部糖粒 ----
+      for (let j = 0; j < 8; j++) {
+        const t = (j + 0.15) / 8;
+        const angle = startAngle + t * sliceAngle;
+        const r = (0.5 + Math.random() * 2.4) * S;
+        const sprinkleColors = [0xffffff, 0xffd700, 0xff69b4, 0x87ceeb, 0x98fb98];
+        const sprinkle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04 * S, 0.05 * S, 0.08 * S, 4),
+          new THREE.MeshBasicMaterial({ color: sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)] })
+        );
+        sprinkle.position.set(Math.cos(angle) * r, 2.66 * S, Math.sin(angle) * r);
+        sprinkle.rotation.set(Math.random() * 0.8, Math.random() * Math.PI, Math.random() * 0.8);
+        group.add(sprinkle);
+      }
+
+      // ---- 3D 姓名标签 (Sprite) ----
+      const hue = (i * 37 + 100) % 360;
+      const bgHsl = `hsl(${hue}, 35%, 90%)`;
+      const nameTexture = createNameTexture(names[i], bgHsl);
+
+      const spriteMat = new THREE.SpriteMaterial({ 
+        map: nameTexture, 
+        transparent: true,
+        opacity: 0.95,
+      });
+      const sprite = new THREE.Sprite(spriteMat);
+      const spriteRadius = 4.0 * S;
+      sprite.position.set(
+        Math.cos(midAngle) * spriteRadius,
+        3.8 * S,
+        Math.sin(midAngle) * spriteRadius
+      );
+      sprite.scale.set(2.0 * S, 0.65 * S, 1);
+      sprite.userData.isNameTag = true;
+      sprite.userData.sliceIndex = i;
+      group.add(sprite);
+
+      cakeGroup.add(group);
+
+      const meshes = [];
+      group.traverse(child => {
+        if (child.isMesh || child.isSprite) meshes.push(child);
+      });
+
+      sliceData.push({
+        group,
+        name: names[i],
+        midAngle,
+        eaten: false,
+        animating: false,
+        meshes: meshes,
+        sprite: sprite,
+      });
+    }
+
+    // ========== 中央蜡烛 (复杂装饰) ==========
+    const candleGroup = new THREE.Group();
+
+    // 主蜡烛体
+    const candleBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3 * S, 0.35 * S, 1.2 * S, 16),
+      new THREE.MeshBasicMaterial({ color: 0xfff8dc })
+    );
+    candleBody.position.set(0, 3.0 * S, 0);
+    candleGroup.add(candleBody);
+
+    // 蜡烛螺旋条纹
+    for (let j = 0; j < 6; j++) {
+      const stripe = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32 * S, 0.04 * S, 8, 16),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(`hsl(${j * 60 + 20}, 60%, 70%)`) })
+      );
+      stripe.position.set(0, 2.6 * S + j * 0.18 * S, 0);
+      stripe.rotation.x = Math.PI / 2;
+      candleGroup.add(stripe);
+    }
+
+    // 蜡烛顶部蜡油滴
+    for (let j = 0; j < 8; j++) {
+      const angle = (j / 8) * Math.PI * 2;
+      const drip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08 * S, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfff8dc })
+      );
+      drip.position.set(
+        Math.cos(angle) * 0.25 * S,
+        3.6 * S + Math.random() * 0.15 * S,
+        Math.sin(angle) * 0.25 * S
+      );
+      candleGroup.add(drip);
+    }
+
+    // 烛芯
+    const wick = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02 * S, 0.02 * S, 0.3 * S, 6),
+      new THREE.MeshBasicMaterial({ color: 0x333333 })
+    );
+    wick.position.set(0, 3.75 * S, 0);
+    candleGroup.add(wick);
+
+    // 火焰核心
+    const fireCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15 * S, 8, 8).scale(1, 2.2, 1),
+      new THREE.MeshBasicMaterial({ color: 0xffaa44 })
+    );
+    fireCore.position.set(0, 4.1 * S, 0);
+    candleGroup.add(fireCore);
+
+    // 火焰外层
+    const fireOuter = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22 * S, 8, 8).scale(1, 1.8, 1),
+      new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.6 })
+    );
+    fireOuter.position.set(0, 4.05 * S, 0);
+    candleGroup.add(fireOuter);
+
+    // 火焰光晕
+    const fireGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5 * S, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.15 })
+    );
+    fireGlow.position.set(0, 4.0 * S, 0);
+    candleGroup.add(fireGlow);
+
+    scene.add(candleGroup);
+
+    // ========== 底部糖珠 ==========
+    for (let i = 0; i < 60; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = (2.0 + Math.random() * 2.0) * S;
+      const beadColors = [0xffd700, 0xff69b4, 0x87ceeb, 0x98fb98, 0xffa500, 0xdc143c];
+      scene.add(new THREE.Mesh(
+        new THREE.SphereGeometry((0.04 + Math.random() * 0.04) * S, 6, 6),
+        new THREE.MeshBasicMaterial({ color: beadColors[Math.floor(Math.random() * beadColors.length)] })
+      ).position.set(Math.cos(angle) * r, 0.1 * S, Math.sin(angle) * r));
+    }
+
+    // ========== 粒子系统 ==========
+    const particleCount = 200;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+    const particleSizes = new Float32Array(particleCount);
+    const particleVelocities = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3] = 0;
+      particlePositions[i * 3 + 1] = -100;
+      particlePositions[i * 3 + 2] = 0;
+      particleColors[i * 3] = 1;
+      particleColors[i * 3 + 1] = 1;
+      particleColors[i * 3 + 2] = 1;
+      particleSizes[i] = 0;
+      particleVelocities.push({ vx: 0, vy: 0, vz: 0, life: 0 });
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    particleGeo.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+    const particleSystem = new THREE.Points(
+      particleGeo,
+      new THREE.PointsMaterial({
+        size: 0.15,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    scene.add(particleSystem);
+
+    function spawnParticles(x, y, z, color) {
+      let spawned = 0;
+      for (let i = 0; i < particleCount && spawned < 30; i++) {
+        const vel = particleVelocities[i];
+        if (vel.life <= 0) {
+          particlePositions[i * 3] = x + (Math.random() - 0.5) * 0.5;
+          particlePositions[i * 3 + 1] = y + (Math.random() - 0.5) * 0.5;
+          particlePositions[i * 3 + 2] = z + (Math.random() - 0.5) * 0.5;
+          const speed = 0.05 + Math.random() * 0.1;
+          const angle = Math.random() * Math.PI * 2;
+          const height = Math.random() * Math.PI;
+          vel.vx = Math.cos(angle) * Math.sin(height) * speed;
+          vel.vy = 0.05 + Math.random() * 0.15;
+          vel.vz = Math.sin(angle) * Math.sin(height) * speed;
+          vel.life = 1.0;
+          particleColors[i * 3] = color.r;
+          particleColors[i * 3 + 1] = color.g;
+          particleColors[i * 3 + 2] = color.b;
+          particleSizes[i] = 0.1 + Math.random() * 0.15;
+          spawned++;
+        }
+      }
+    }
+
+    function updateParticles() {
+      for (let i = 0; i < particleCount; i++) {
+        const vel = particleVelocities[i];
+        if (vel.life > 0) {
+          particlePositions[i * 3] += vel.vx;
+          particlePositions[i * 3 + 1] += vel.vy;
+          particlePositions[i * 3 + 2] += vel.vz;
+          vel.vy -= 0.002;
+          vel.life -= 0.015;
+          particleSizes[i] *= 0.97;
+          if (vel.life <= 0) particlePositions[i * 3 + 1] = -100;
+        }
+      }
+      particleGeo.attributes.position.needsUpdate = true;
+      particleGeo.attributes.color.needsUpdate = true;
+      particleGeo.attributes.size.needsUpdate = true;
+    }
+
+    // ========== 核心：食用动画 ==========
+    function eatSlice(index) {
+      const data = sliceData[index];
+      if (data.eaten || data.animating) return;
+
+      console.log('✅ 吃蛋糕:', index, data.name);
+      data.eaten = true;
+      data.animating = true;
+      data.group.userData.eaten = true;
+
+      const group = data.group;
+      const midAngle = data.midAngle;
+      const liftDirX = Math.cos(midAngle);
+      const liftDirZ = Math.sin(midAngle);
+      const startTime = performance.now();
+
+      function animateEat() {
+        const progress = Math.min((performance.now() - startTime) / 900, 1);
+
+        if (progress < 0.25) {
+          const e = 1 - Math.pow(1 - progress / 0.25, 3);
+          group.position.y = 1.5 * S * 0.3 * e;
+          group.rotation.z = Math.sin(midAngle) * 0.08 * e;
+          group.rotation.x = -Math.cos(midAngle) * 0.08 * e;
+        } else if (progress < 0.6) {
+          const e = 1 - Math.pow(1 - (progress - 0.25) / 0.35, 2);
+          group.position.y = 1.5 * S * (0.3 + 0.7 * e);
+          group.position.x = liftDirX * 2.5 * S * e;
+          group.position.z = liftDirZ * 2.5 * S * e;
+          group.rotation.z = Math.sin(midAngle) * (0.08 + e * 0.25);
+          group.rotation.x = -Math.cos(midAngle) * (0.08 + e * 0.25);
+          group.rotation.y = e * 0.3;
+        } else {
+          const e = Math.pow((progress - 0.6) / 0.4, 2);
+          group.position.y = 1.5 * S - e * 4 * S;
+          group.position.x = liftDirX * 2.5 * S * (1 + e * 1.5);
+          group.position.z = liftDirZ * 2.5 * S * (1 + e * 1.5);
+          group.rotation.z = Math.sin(midAngle) * (0.33 + e * 0.8);
+          group.rotation.x = -Math.cos(midAngle) * (0.33 + e * 0.8);
+          group.rotation.y = 0.3 + e * 2.0;
+
+          const fade = Math.max(0, 1 - e * 1.5);
+          data.meshes.forEach(mesh => {
+            if (mesh.material) {
+              if (Array.isArray(mesh.material)) {
+                mesh.material.forEach(m => { m.transparent = true; m.opacity = fade; });
+              } else {
+                mesh.material.transparent = true;
+                mesh.material.opacity = fade;
+              }
+            }
+          });
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animateEat);
+        } else {
+          group.visible = false;
+          data.animating = false;
+          showEatEffect(data);
+          spawnParticles(group.position.x, 2.5 * S, group.position.z, getColor(index));
+        }
+      }
+      animateEat();
+    }
+
+    function showEatEffect(data) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = `🍰 ${data.name} 的蛋糕被享用啦！✨`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // ========== 重置功能 ==========
+    window.resetAll = function() {
+      sliceData.forEach(data => {
+        data.eaten = false;
+        data.animating = false;
+        data.group.userData.eaten = false;
+        data.group.visible = true;
+        data.group.position.set(0, 0, 0);
+        data.group.rotation.set(0, 0, 0);
+        data.meshes.forEach(mesh => {
+          if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+              mesh.material.forEach(m => { m.transparent = false; m.opacity = 1; });
+            } else {
+              mesh.material.transparent = false;
+              mesh.material.opacity = 1;
+            }
+          }
+        });
+      });
+      const toast = document.getElementById('toast');
+      toast.innerHTML = '🎂 蛋糕已重置！快来享用吧~';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    };
+
+    // ========== 点击检测 ==========
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', (event) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const targets = [];
+      sliceData.forEach(data => {
+        data.group.traverse(child => {
+          if (child.isMesh || child.isSprite) targets.push(child);
+        });
+      });
+
+      const intersects = raycaster.intersectObjects(targets);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        let node = hit;
+        while (node) {
+          if (node.userData && node.userData.index !== undefined) {
+            const idx = node.userData.index;
+            if (!sliceData[idx].eaten && !sliceData[idx].animating) {
+              console.log('点击对象:', hit.type || hit.constructor.name, '-> 索引:', idx, '名字:', names[idx]);
+              eatSlice(idx);
+            }
+            break;
+          }
+          node = node.parent;
+        }
+      }
+    });
+
+    // ========== 窗口自适应 ==========
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    // ========== 动画循环 ==========
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      updateParticles();
+
+      const time = Date.now() / 1000;
+      fireCore.scale.y = 1 + Math.sin(time * 8) * 0.15 + Math.sin(time * 13) * 0.08;
+      fireCore.scale.x = 1 + Math.sin(time * 7) * 0.06;
+      fireCore.position.y = 4.1 * S + Math.sin(time * 10) * 0.05 * S;
+      fireCore.position.x = Math.sin(time * 6) * 0.02 * S;
+      fireCore.position.z = Math.cos(time * 5) * 0.02 * S;
+
+      fireOuter.position.copy(fireCore.position);
+      fireOuter.position.y -= 0.05 * S;
+      fireOuter.scale.setScalar(1 + Math.sin(time * 5) * 0.1);
+
+      fireGlow.scale.setScalar(1 + Math.sin(time * 4) * 0.15);
+      fireGlow.position.copy(fireCore.position);
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    setTimeout(() => document.getElementById('loading').classList.add('hidden'), 800);
+    renderer.domElement.addEventListener('dblclick', () => {
+      controls.autoRotate = !controls.autoRotate;
+    });
+
+    console.log('🎂 电医2401班一周年蛋糕已加载！');
+  </script>
+</body>
+</html>
